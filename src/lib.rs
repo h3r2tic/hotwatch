@@ -13,7 +13,6 @@
 pub mod blocking;
 mod util;
 
-use notify::Watcher as _;
 pub use notify::{self, DebouncedEvent as Event};
 use std::{
     collections::HashMap,
@@ -72,18 +71,20 @@ type HandlerMap = HashMap<PathBuf, Box<dyn FnMut(Event) + Send>>;
 /// background thread. The background thread runs until this is dropped.
 ///
 /// Dropping this will also unwatch everything.
-pub struct Hotwatch {
-    watcher: notify::RecommendedWatcher,
+pub struct GenericHotwatch<W: notify::Watcher> {
+    watcher: W,
     handlers: Arc<Mutex<HandlerMap>>,
 }
 
-impl std::fmt::Debug for Hotwatch {
+pub type Hotwatch = GenericHotwatch<notify::RecommendedWatcher>;
+
+impl<W: notify::Watcher> std::fmt::Debug for GenericHotwatch<W> {
     fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
         fmt.debug_struct("Hotwatch").finish()
     }
 }
 
-impl Hotwatch {
+impl<W: notify::Watcher> GenericHotwatch<W> {
     /// Creates a new non-blocking hotwatch instance.
     ///
     /// # Errors
